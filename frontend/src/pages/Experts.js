@@ -286,7 +286,7 @@ const Experts = () => {
             <Card key={expert._id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 flex-1 min-w-0">
                     <Avatar
                       src={expert.profileImage}
                       fallback={expert.name?.charAt(0)}
@@ -299,11 +299,11 @@ const Experts = () => {
                       </CardDescription>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-1 flex-shrink-0">
                     <div className="flex items-center space-x-1">
                       {renderStars(expert.rating?.average || 0)}
                     </div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                       ({expert.rating?.count || 0})
                     </span>
                   </div>

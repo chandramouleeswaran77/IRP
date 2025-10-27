@@ -29,16 +29,33 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const navigation = [
+  // Base navigation for all users
+  const baseNavigation = [
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Experts', href: '/experts', icon: Users },
     { name: 'Events', href: '/events', icon: Calendar },
     { name: 'Feedback', href: '/feedback', icon: MessageSquare },
-    ...(user?.role === 'admin' ? [
-      { name: 'Users', href: '/users', icon: User },
-      { name: 'Activity Logs', href: '/activity', icon: Activity },
-    ] : []),
   ];
+
+  // Additional navigation for coordinators and admins
+  const coordinatorNavigation = [
+    { name: 'Experts', href: '/experts', icon: Users },
+  ];
+
+  // Additional navigation for admins only
+  const adminNavigation = [
+    { name: 'Users', href: '/users', icon: User },
+    { name: 'Activity Logs', href: '/activity', icon: Activity },
+  ];
+
+  let navigation = baseNavigation;
+  
+  if (user?.role === 'coordinator' || user?.role === 'admin') {
+    navigation = [...baseNavigation, ...coordinatorNavigation];
+  }
+  
+  if (user?.role === 'admin') {
+    navigation = [...navigation, ...adminNavigation];
+  }
 
   const handleLogout = () => {
     logout();

@@ -61,10 +61,11 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     if (token) {
       // Verify token with backend
-      fetch(`${process.env.REACT_APP_API_URL}/auth/check`, {
+      fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000/api'}/auth/check`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
       })
         .then(res => res.json())
         .then(data => {
@@ -124,12 +125,16 @@ export const AuthProvider = ({ children }) => {
       {children}
       <Toaster
         position="top-right"
+        containerStyle={{
+          zIndex: 9999,
+        }}
         toastOptions={{
           duration: 4000,
           style: {
             background: 'var(--card)',
             color: 'var(--card-foreground)',
             border: '1px solid var(--border)',
+            zIndex: 9999,
           },
         }}
       />

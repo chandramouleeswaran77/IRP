@@ -17,6 +17,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   Eye,
+  Plus,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -33,6 +35,13 @@ const Feedback = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalFeedback, setTotalFeedback] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
+  const [showSubmitForm, setShowSubmitForm] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [selectedEventForFeedback, setSelectedEventForFeedback] = useState('');
+  const [selectedExpertForFeedback, setSelectedExpertForFeedback] = useState('');
+  const [feedbackRating, setFeedbackRating] = useState(0);
+  const [feedbackComments, setFeedbackComments] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,6 +85,47 @@ const Feedback = () => {
     setCurrentPage(1);
   };
 
+  const fetchEvents = async () => {
+    try {
+      const response = await eventsAPI.getEvents({ limit: 100, status: 'completed' });
+      if (response.data.success) {
+        setEvents(response.data.data.events);
+      }
+    } catch (error) {
+      console.error('Fetch events error:', error);
+      toast.error('Failed to fetch events');
+    }
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!selectedEventForFeedback || !selectedExpertForFeedback || feedbackRating === 0) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await feedbackAPI.submitFeedback({
+        event: selectedEventForFeedback,
+        expert: selectedExpertForFeedback,
+        rating: feedbackRating,
+        comments: feedbackComments,
+      });
+      toast.success('Feedback submitted successfully');
+      setShowSubmitForm(false);
+      setSelectedEventForFeedback('');
+      setSelectedExpertForFeedback('');
+      setFeedbackRating(0);
+      setFeedbackComments('');
+      fetchFeedback();
+    } catch (error) {
+      console.error('Submit feedback error:', error);
+      toast.error('Failed to submit feedback');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const renderStars = (rating) => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
@@ -115,6 +165,10 @@ const Feedback = () => {
             Review and analyze participant feedback
           </p>
         </div>
+        <Button onClick={() => { setShowSubmitForm(true); fetchEvents(); }}>
+          <Plus className="mr-2 h-4 w-4" />
+          Submit Feedback
+        </Button>
       </div>
 
       {/* Search and Filters */}
@@ -340,6 +394,111 @@ const Feedback = () => {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Submit Feedback Modal */}
+      {showSubmitForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <CardHeader className="flex items-center justify-between">
+              <CardTitle>Submit Feedback</CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowSubmitForm(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">Select Event *</label>
+                <select
+                  value={selectedEventForFeedback}
+                  onChange={(e) => {
+                    setSelectedEventForFeedback(e.target.value);
+                    const selected = events.find(ev => ev._id === e.target.value);
+                    if (selected) {
+                      setSelectedExpertForFeedback(selected.expert?._id || '');
+                    }
+                  }}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2"
+                >
+                  <option value="">Choose an event...</option>
+                  {events.map((event) => (
+                    <option key={event._id} value={event._id}>
+                      {event.title} - {new Date(event.scheduledDate).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Expert</label>
+                {selectedEventForFeedback && (
+                  <input
+                    type="text"
+                    value={events.find(e => e._id === selectedEventForFeedback)?.expert?.name || 'Not assigned'}
+                    disabled
+                    className="w-full rounded-md border-gray-300 shadow-sm bg-gray-50 sm:text-sm p-2"
+                  />
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Rating *</label>
+                <div className="flex items-center space-x-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setFeedbackRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`h-6 w-6 cursor-pointer transition-colors ${
+                          star <= feedbackRating
+                            ? 'text-yellow-500 fill-current'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                  {feedbackRating > 0 && (
+                    <span className="text-sm text-gray-600">{feedbackRating}/5</span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">Comments</label>
+                <textarea
+                  value={feedbackComments}
+                  onChange={(e) => setFeedbackComments(e.target.value)}
+                  rows={4}
+                  placeholder="Share your thoughts about the event..."
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary sm:text-sm p-2"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowSubmitForm(false)}
+                  disabled={submitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSubmitFeedback}
+                  loading={submitting}
+                >
+                  Submit Feedback
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

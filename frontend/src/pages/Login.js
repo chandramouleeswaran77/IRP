@@ -1,15 +1,17 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { authAPI } from '../services/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import { GraduationCap, Users, Calendar, MessageSquare } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Login = () => {
   const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -17,11 +19,19 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
+  useEffect(() => {
+    // Check for error messages in URL
+    const error = searchParams.get('error');
+    if (error === 'auth_failed') {
+      toast.error('Authentication failed. Please try again.');
+      // Clean up URL
+      navigate('/login', { replace: true });
+    }
+  }, [searchParams, navigate]);
+
   const handleGoogleLogin = () => {
     // full navigation — do not use fetch/axios
     window.location.href = `${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/auth/google`;
-        
-
   };
 
   if (loading) {

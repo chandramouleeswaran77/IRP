@@ -98,6 +98,29 @@ const authorizeResource = (resourceType) => {
         }
       }
 
+      // Attendee has limited access - only for viewing events and giving feedback
+      if (req.user.role === 'attendee') {
+        // Attendees can access feedback and events routes
+        const allowedPaths = ['/api/feedback', '/api/events'];
+        const isAllowedPath = allowedPaths.some(path => req.path.startsWith(path));
+        
+        // Only allow GET requests for events
+        if (req.path.startsWith('/api/events') && req.method !== 'GET') {
+          return res.status(403).json({
+            success: false,
+            message: 'Attendees can only view events'
+          });
+        }
+        
+        // Only allow POST for feedback submission
+        if (req.path.startsWith('/api/feedback') && !['GET', 'POST'].includes(req.method)) {
+          return res.status(403).json({
+            success: false,
+            message: 'Insufficient permissions for this action'
+          });
+        }
+      }
+
       next();
     } catch (error) {
       console.error('Resource authorization error:', error);

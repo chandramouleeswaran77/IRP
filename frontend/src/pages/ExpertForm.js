@@ -7,6 +7,7 @@ import Button from '../components/UI/Button';
 import { Input, Label, Textarea, Select } from '../components/UI/Input';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
 import Avatar from '../components/UI/Avatar';
+import StarRating from '../components/UI/StarRating';
 import {
   ArrowLeft,
   Upload,
@@ -60,6 +61,7 @@ const ExpertForm = () => {
         website: '',
       },
       availability: 'available',
+      rating: 0,
     },
   });
 
@@ -103,6 +105,8 @@ const ExpertForm = () => {
             });
           } else if (key === 'expertise') {
             setValue(key, expertData[key] || []);
+          } else if (key === 'rating') {
+            setValue('rating', expertData[key]?.average || 0);
           } else {
             setValue(key, expertData[key] || '');
           }
@@ -125,11 +129,20 @@ const ExpertForm = () => {
     try {
       setLoading(true);
       
+      // Prepare expert data with proper rating structure
+      const expertData = {
+        ...data,
+        rating: {
+          average: data.rating || 0,
+          count: data.rating > 0 ? 1 : 0
+        }
+      };
+      
       if (isEdit) {
-        await expertsAPI.updateExpert(id, data);
+        await expertsAPI.updateExpert(id, expertData);
         toast.success('Expert updated successfully');
       } else {
-        await expertsAPI.createExpert(data);
+        await expertsAPI.createExpert(expertData);
         toast.success('Expert added successfully');
       }
       
@@ -333,6 +346,21 @@ const ExpertForm = () => {
                     <p className="text-sm text-red-500 mt-1">{errors.expertise.message}</p>
                   )}
                 </div>
+
+                <div>
+                  <Label>Initial Rating</Label>
+                  <div className="mt-2">
+                    <StarRating
+                      rating={watch('rating') || 0}
+                      onRatingChange={(rating) => setValue('rating', rating)}
+                      interactive={true}
+                      size="lg"
+                    />
+                    <p className="text-sm text-gray-500 mt-1">
+                      Rate the expert's initial skill level (0-5 stars)
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
@@ -458,14 +486,14 @@ const ExpertForm = () => {
                       className="hidden"
                       id="image-upload"
                     />
-                    <Label htmlFor="image-upload">
-                      <Button variant="outline" asChild>
-                        <span className="cursor-pointer">
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload Image
-                        </span>
-                      </Button>
-                    </Label>
+                    <Button 
+                      variant="outline" 
+                      type="button"
+                      onClick={() => document.getElementById('image-upload').click()}
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload Image
+                    </Button>
                   </div>
                 </div>
               </CardContent>

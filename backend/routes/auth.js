@@ -14,12 +14,23 @@ router.get('/google',
 router.get('/google/callback',
   passport.authenticate('google', { failureRedirect: '/login', session: true }),
   (req, res) => {
-    // Option A: set cookie/session and redirect to frontend app
-    res.redirect(process.env.FRONTEND_URL || 'http://localhost:3000');
-
-    // Option B: include token in query (if you want client to read it)
-    // const token = createJwtForUser(req.user);
-    // res.redirect(`${process.env.FRONTEND_URL}?token=${token}`);
+    try {
+      console.log('OAuth callback reached - User:', req.user);
+      
+      // Generate JWT token for the authenticated user
+      const token = generateToken(req.user._id);
+      console.log('Generated token:', token);
+      
+      // Redirect to frontend with token
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${token}`;
+      console.log('Redirecting to:', redirectUrl);
+      
+      res.redirect(redirectUrl);
+    } catch (error) {
+      console.error('OAuth callback error:', error);
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=auth_failed`);
+    }
   }
 );
 
@@ -140,6 +151,25 @@ router.get('/check', authenticateToken, (req, res) => {
       user: req.user.profile
     }
   });
+});
+
+// Get user from session (for OAuth callback)
+router.get('/session-user', (req, res) => {
+  if (req.user) {
+    const token = generateToken(req.user._id);
+    res.json({
+      success: true,
+      data: {
+        user: req.user.profile,
+        token: token
+      }
+    });
+  } else {
+    res.status(401).json({
+      success: false,
+      message: 'No active session'
+    });
+  }
 });
 
 module.exports = router;

@@ -89,17 +89,31 @@ const EventForm = () => {
     try {
       setLoading(true);
       
+      console.log('Fetching experts and coordinators...');
+      
       // Fetch experts and coordinators
       const [expertsRes, coordinatorsRes] = await Promise.all([
         expertsAPI.getExperts({ limit: 100 }),
-        usersAPI.getUsers({ limit: 100 })
+        usersAPI.getCoordinators({ limit: 100 })
       ]);
+
+      console.log('Experts response:', expertsRes.data);
+      console.log('Coordinators response:', coordinatorsRes.data);
 
       if (expertsRes.data.success) {
         setExperts(expertsRes.data.data.experts);
+        console.log('Experts loaded:', expertsRes.data.data.experts.length);
+      } else {
+        console.error('Failed to fetch experts:', expertsRes.data.message);
+        toast.error('Failed to load experts');
       }
+      
       if (coordinatorsRes.data.success) {
         setCoordinators(coordinatorsRes.data.data.users);
+        console.log('Coordinators loaded:', coordinatorsRes.data.data.users.length);
+      } else {
+        console.error('Failed to fetch coordinators:', coordinatorsRes.data.message);
+        toast.error('Failed to load coordinators');
       }
 
       // Fetch event data if editing
@@ -366,14 +380,23 @@ const EventForm = () => {
                     className={errors.expert ? 'border-red-500' : ''}
                   >
                     <option value="">Select an expert...</option>
-                    {experts.map((expert) => (
-                      <option key={expert._id} value={expert._id}>
-                        {expert.name} - {expert.company} ({expert.position})
-                      </option>
-                    ))}
+                    {experts.length > 0 ? (
+                      experts.map((expert) => (
+                        <option key={expert._id} value={expert._id}>
+                          {expert.name} - {expert.company} ({expert.position})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No experts available - Add experts first</option>
+                    )}
                   </Select>
                   {errors.expert && (
                     <p className="text-sm text-red-500 mt-1">{errors.expert.message}</p>
+                  )}
+                  {experts.length === 0 && (
+                    <p className="text-sm text-amber-600 mt-1">
+                      No experts found. <button type="button" onClick={() => navigate('/experts/new')} className="text-blue-600 hover:underline">Add an expert first</button>
+                    </p>
                   )}
                 </div>
 
@@ -385,14 +408,23 @@ const EventForm = () => {
                     className={errors.coordinator ? 'border-red-500' : ''}
                   >
                     <option value="">Select a coordinator...</option>
-                    {coordinators.map((coordinator) => (
-                      <option key={coordinator._id} value={coordinator._id}>
-                        {coordinator.name} ({coordinator.email})
-                      </option>
-                    ))}
+                    {coordinators.length > 0 ? (
+                      coordinators.map((coordinator) => (
+                        <option key={coordinator._id} value={coordinator._id}>
+                          {coordinator.name} ({coordinator.email})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No coordinators available</option>
+                    )}
                   </Select>
                   {errors.coordinator && (
                     <p className="text-sm text-red-500 mt-1">{errors.coordinator.message}</p>
+                  )}
+                  {coordinators.length === 0 && (
+                    <p className="text-sm text-amber-600 mt-1">
+                      No coordinators found. Make sure you're logged in properly.
+                    </p>
                   )}
                 </div>
               </CardContent>
