@@ -47,8 +47,8 @@ app.use(rateLimit({
 // =======================
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
+     origin: "https://irp-woad.vercel.app",
+     credentials: true
   })
 );
 
